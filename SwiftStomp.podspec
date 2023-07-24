@@ -7,7 +7,7 @@
 #
 
 Pod::Spec.new do |s|
-  s.name             = 'SwiftStomp'
+  s.name             = 'TMSwiftStomp'
   s.version          = '1.1.1'
   s.summary          = 'An elegant Stomp client for iOS.'
   s.description      = <<-DESC
@@ -15,12 +15,12 @@ Pod::Spec.new do |s|
   It's based on Starscream, an amazing Websocket library for swift.
                          DESC
  
-  s.homepage         = 'https://github.com/Romixery/SwiftStomp'
+  s.homepage         = 'https://github.com/RoSpr/TMSwiftStomp.git'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'Romixery' => 'topcoder.romixery@gmail.com' }
-  s.source           = { :git => 'https://github.com/Romixery/SwiftStomp.git', :tag => s.version.to_s }
+  s.source           = { :git => 'https://github.com/RoSpr/TMSwiftStomp.git', :tag => s.version.to_s }
   s.author       = {'Ahmad Daneshvar' => 'http://iamdaneshvar.com'}
-  s.source       = { :git => 'https://github.com/Romixery/SwiftStomp.git',  :tag => "#{s.version}"}
+  s.source       = { :git => 'https://github.com/RoSpr/TMSwiftStomp.git',  :tag => "#{s.version}"}
 
   s.ios.deployment_target = '10.0'
   s.osx.deployment_target = "10.12"
