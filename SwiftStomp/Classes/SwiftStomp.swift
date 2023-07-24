@@ -763,7 +763,7 @@ public class InvalidStompCommandError : Error{
 }
 
 //MARK: - TM Methods
-open extension SwiftStomp {
+fileprivate extension SwiftStomp {
     func tmSendFrame(frame: StompFrame<StompRequestFrame>, maxFrameSize: Int, completion: (() -> ())? = nil){
         switch self.status {
         case .socketConnected:
@@ -789,6 +789,14 @@ open extension SwiftStomp {
         
         //** Reset ping timer
         self.resetPingTimer()
+    }
+}
+
+public extension SwiftStomp {
+    func sendSplit<T: Encodable>(body: T, to: String, receiptId: String? = nil, headers: [String : String]? = nil, jsonDateEncodingStrategy: JSONEncoder.DateEncodingStrategy = .iso8601, maxFrameSize: Int = 8 * 1024){
+        let headers = prepareHeadersForSend(to: to, receiptId: receiptId, headers: headers)
+        
+        self.tmSendFrame(frame: StompFrame(name: .send, headers: headers, encodableBody: body, jsonDateEncodingStrategy: jsonDateEncodingStrategy), maxFrameSize: maxFrameSize)
     }
 }
 
