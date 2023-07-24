@@ -762,3 +762,52 @@ public class InvalidStompCommandError : Error{
     }
 }
 
+//MARK: - TM Methods
+open extension SwiftStomp {
+    func tmSendFrame(frame: StompFrame<StompRequestFrame>, maxFrameSize: Int, completion: (() -> ())? = nil){
+        switch self.status {
+        case .socketConnected:
+            if frame.name != .connect{
+                stompLog(type: .info, message: "Unable to send frame \(frame.name.rawValue): Stomp is not connected!")
+                return
+            }
+        case .socketDisconnected, .connecting:
+            stompLog(type: .info, message: "Unable to send frame \(frame.name.rawValue): Invalid state: \(self.status)")
+            return
+        default:
+            break
+        }
+        
+        let rawFrameToSend = frame.serialize()
+        
+        stompLog(type: .info, message: "Stomp: Sending...\n\(rawFrameToSend)\n")
+        
+        let frames = rawFrameToSend.chunked(withMaxLength: maxFrameSize)
+        for frame in frames {
+            self.socket.write(string: frame, completion: completion)
+        }
+        
+        //** Reset ping timer
+        self.resetPingTimer()
+    }
+}
+
+public extension String {
+    func chunked(withMaxLength maxLength: Int) -> [String] {
+        var chunks = [String]()
+        var index = self.startIndex
+        
+        while index < self.endIndex {
+            let remainingLength = self.distance(from: index, to: self.endIndex)
+            let chunkLength = min(maxLength, remainingLength)
+            
+            let endIndex = self.index(index, offsetBy: chunkLength)
+            let chunk = String(self[index..<endIndex])
+            chunks.append(chunk)
+            
+            index = endIndex
+        }
+        
+        return chunks
+    }
+}
