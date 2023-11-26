@@ -787,7 +787,7 @@ fileprivate extension SwiftStomp {
             
             while index < rawFrameToSend.endIndex {
                 let remainingLength = rawFrameToSend.distance(from: index, to: rawFrameToSend.endIndex)
-                let chunkLength = min(max, remainingLength)
+                let chunkLength = min(maxFrameSize, remainingLength)
                 
                 let endIndex = rawFrameToSend.index(index, offsetBy: chunkLength)
                 let chunk = String(rawFrameToSend[index..<endIndex])
