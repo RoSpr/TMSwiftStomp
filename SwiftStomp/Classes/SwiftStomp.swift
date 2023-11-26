@@ -782,9 +782,20 @@ fileprivate extension SwiftStomp {
         
         stompLog(type: .info, message: "Stomp: Sending...\n\(rawFrameToSend)\n")
         
-        let frames = rawFrameToSend.chunked(withMaxLength: maxFrameSize)
-        for frame in frames {
-            self.socket.write(string: frame, completion: completion)
+        DispatchQueue.global(qos: .userInitiated).async {
+            var index = rawFrameToSend.startIndex
+            
+            while index < rawFrameToSend.endIndex {
+                let remainingLength = rawFrameToSend.distance(from: index, to: rawFrameToSend.endIndex)
+                let chunkLength = min(max, remainingLength)
+                
+                let endIndex = rawFrameToSend.index(index, offsetBy: chunkLength)
+                let chunk = String(rawFrameToSend[index..<endIndex])
+                
+                index = endIndex
+                
+                self.socket.write(string: chunk, completion: completion)
+            }
         }
         
         //** Reset ping timer
@@ -797,25 +808,5 @@ public extension SwiftStomp {
         let headers = prepareHeadersForSend(to: to, receiptId: receiptId, headers: headers)
         
         self.tmSendFrame(frame: StompFrame(name: .send, headers: headers, encodableBody: body, jsonDateEncodingStrategy: jsonDateEncodingStrategy), maxFrameSize: maxFrameSize)
-    }
-}
-
-public extension String {
-    func chunked(withMaxLength maxLength: Int) -> [String] {
-        var chunks = [String]()
-        var index = self.startIndex
-        
-        while index < self.endIndex {
-            let remainingLength = self.distance(from: index, to: self.endIndex)
-            let chunkLength = min(maxLength, remainingLength)
-            
-            let endIndex = self.index(index, offsetBy: chunkLength)
-            let chunk = String(self[index..<endIndex])
-            chunks.append(chunk)
-            
-            index = endIndex
-        }
-        
-        return chunks
     }
 }
