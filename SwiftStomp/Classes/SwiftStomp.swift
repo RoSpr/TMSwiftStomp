@@ -334,10 +334,14 @@ fileprivate extension SwiftStomp{
         print("\(formatter.string(from: Date())) SwiftStomp [\(type.rawValue)]:\t \(message)")
     }
     
-    func prepareHeadersForSend(to : String, receiptId : String? = nil, headers : [String : String]? = nil) -> [String : String]{
+    func prepareHeadersForSend(to : String, receiptId : String? = nil, headers : [String : String]? = nil, size: Int? = nil) -> [String : String]{
         
         let headerBuilder = StompHeaderBuilder
         .add(key: .destination, value: to)
+        
+        if let size = size {
+            _ = headerBuilder.add(key: .contentLength, value: size)
+        }
         
         if let receiptId = receiptId{
             _ = headerBuilder.add(key: .receipt, value: receiptId)
@@ -782,19 +786,19 @@ fileprivate extension SwiftStomp {
         
         stompLog(type: .info, message: "Stomp: Sending...\n\(rawFrameToSend)\n")
         
+        let beginDate = Date()
+        let totalChunks = Int(round(Double(rawFrameToSend.count) / Double(maxFrameSize)))
+        var rawFrameToSplit = rawFrameToSend
+        
         DispatchQueue.global(qos: .userInitiated).async {
-            var index = rawFrameToSend.startIndex
-            
-            while index < rawFrameToSend.endIndex {
-                let remainingLength = rawFrameToSend.distance(from: index, to: rawFrameToSend.endIndex)
-                let chunkLength = min(maxFrameSize, remainingLength)
-                
-                let endIndex = rawFrameToSend.index(index, offsetBy: chunkLength)
-                let chunk = String(rawFrameToSend[index..<endIndex])
-                
-                index = endIndex
-                
-                self.socket.write(string: chunk, completion: completion)
+            for chunkNumber in 0..<totalChunks {
+                let chunk = String(rawFrameToSplit.prefix(maxFrameSize))
+                rawFrameToSplit = String(rawFrameToSplit.dropFirst(maxFrameSize))
+                self.socket.write(string: chunk, completion: nil)
+                if chunkNumber + 1 == totalChunks && rawFrameToSend.count > 1024 * 1024 {
+                    let time = Calendar.current.dateComponents([.second, .nanosecond], from: beginDate, to: Date())
+                    stompLog(type: .info, message: "Message uploading of size \(rawFrameToSend.count / 1024 / 1024) MB finished. Total seconds: \(time.second ?? -1).\((time.nanosecond ?? 0) / 100000000)")
+                }
             }
         }
         
@@ -805,7 +809,8 @@ fileprivate extension SwiftStomp {
 
 public extension SwiftStomp {
     func sendSplit<T: Encodable>(body: T, to: String, receiptId: String? = nil, headers: [String : String]? = nil, jsonDateEncodingStrategy: JSONEncoder.DateEncodingStrategy = .iso8601, maxFrameSize: Int = 8 * 1024){
-        let headers = prepareHeadersForSend(to: to, receiptId: receiptId, headers: headers)
+        let size = (try? JSONEncoder().encode(body))?.count
+        let headers = prepareHeadersForSend(to: to, receiptId: receiptId, headers: headers, size: size)
         
         self.tmSendFrame(frame: StompFrame(name: .send, headers: headers, encodableBody: body, jsonDateEncodingStrategy: jsonDateEncodingStrategy), maxFrameSize: maxFrameSize)
     }
