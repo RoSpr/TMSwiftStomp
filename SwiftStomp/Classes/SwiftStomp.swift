@@ -85,6 +85,7 @@ fileprivate enum StompLogType : String{
     case info = "INFO"
     case socketError = "SOCKET ERROR"
     case stompError = "STOMP ERROR"
+    case uploadInfo = "UPLOAD INFO"
 }
 
 // MARK: - SwiftStomp
@@ -327,7 +328,15 @@ public extension SwiftStomp{
 /// Helper functions
 fileprivate extension SwiftStomp{
     func stompLog(type : StompLogType, message : String){
-        if !self.enableLogging { return }
+        guard self.enableLogging else {
+            if type == .uploadInfo {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+
+                print("\(formatter.string(from: Date())) SwiftStomp [\(type.rawValue)]:\t \(message)")
+            }
+            return
+        }
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
 
@@ -797,7 +806,7 @@ fileprivate extension SwiftStomp {
                 self.socket.write(string: chunk, completion: nil)
                 if chunkNumber + 1 == totalChunks && rawFrameToSend.count > 1024 * 1024 {
                     let time = Calendar.current.dateComponents([.second, .nanosecond], from: beginDate, to: Date())
-                    stompLog(type: .info, message: "Message uploading of size \(rawFrameToSend.count / 1024 / 1024) MB finished. Total seconds: \(time.second ?? -1).\((time.nanosecond ?? 0) / 100000000)")
+                    stompLog(type: .uploadInfo, message: "Message uploading of size \(rawFrameToSend.count / 1024 / 1024) MB finished. Total seconds: \(time.second ?? -1).\((time.nanosecond ?? 0) / 100000000)")
                 }
             }
         }
