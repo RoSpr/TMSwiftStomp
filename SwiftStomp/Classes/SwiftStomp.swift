@@ -806,7 +806,7 @@ fileprivate extension SwiftStomp {
                 self.socket.write(string: chunk, completion: nil)
                 if chunkNumber + 1 == totalChunks && rawFrameToSend.count > 1024 * 1024 {
                     let time = Calendar.current.dateComponents([.second, .nanosecond], from: beginDate, to: Date())
-                    stompLog(type: .uploadInfo, message: "Message uploading of size \(rawFrameToSend.count / 1024 / 1024) MB finished. Total seconds: \(time.second ?? -1).\((time.nanosecond ?? 0) / 100000000)")
+                    self.stompLog(type: .uploadInfo, message: "Message uploading of size \(rawFrameToSend.count / 1024 / 1024) MB finished. Total seconds: \(time.second ?? -1).\((time.nanosecond ?? 0) / 100000000)")
                 }
             }
         }
